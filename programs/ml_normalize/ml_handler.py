@@ -19,7 +19,7 @@ class MLHandler:
             path = os.path.join(
                 os.path.dirname(__file__),
                 "keras_models",
-                "predict_required_conv1d2x_4fc_reg05.keras"
+                "predict_required_conv1d2x_4fc_reg05-03-02_precision.keras"
             )
             self.required_model = tf.keras.models.load_model(path)
         except Exception as e:
@@ -39,7 +39,7 @@ class MLHandler:
             path = os.path.join(
                 os.path.dirname(__file__),
                 "keras_models",
-                "predict_standardfieldname_conv1d_6fc_reg05.keras"
+                "predict_standardfieldname_conv1d_3fc_reg05.keras"
             )
             self.standardfieldname_model = tf.keras.models.load_model(path)
         except Exception as e:
@@ -92,17 +92,6 @@ class MLHandler:
                 self.label_encoder_standardFieldName = pickle.load(handle)
         except Exception as e:
             print(f"[ERROR]: Could not load standardFieldName label encoder: {e}")
-
-        try:
-            path = os.path.join(
-                os.path.dirname(__file__),
-                "tokenizers",
-                "label_encoder_required.pickle"
-            )
-            with open(path, 'rb') as handle:
-                self.label_encoder_required = pickle.load(handle)
-        except Exception as e:
-            print(f"[ERROR]: Could not load 'required' label encoder: {e}")
 
         try:
             path = os.path.join(
@@ -189,7 +178,14 @@ class MLHandler:
         return padded_sequences
     
     @staticmethod
-    def decode_binary(model_outputs, encoder):
+    def decode_binary(model_outputs):
+        class_probabilities = (tf.round(tf.cast(model_outputs, tf.float64) * 1000) / 1000).numpy()
+        class_labels_int = tf.cast(tf.math.greater(model_outputs, 0.5), tf.int32).numpy()
+        class_labels = np.array(["YES" if x == 1 else "NO" for x in class_labels_int])
+        return class_labels, class_probabilities
+
+    @staticmethod
+    def decode_multiclass(model_outputs, encoder):
         class_probabilities = tf.reduce_max(model_outputs, axis=1)
         class_probabilities = tf.round(class_probabilities * 100) / 100
         class_indices = tf.argmax(model_outputs, axis=1)
@@ -257,7 +253,7 @@ class MLHandler:
         # predict 'required'
         required_predicted = self.required_model.predict(inputs)
 
-        df[header_map['required']], df[header_map['required_conf']] = self.decode_binary(required_predicted, self.label_encoder_required)
+        df[header_map['required']], df[header_map['required_conf']] = self.decode_binary(required_predicted)
         required_idx = df.index[df[header_map['required']]=="YES"]
 
         # predict 'standardFieldName'
@@ -272,8 +268,8 @@ class MLHandler:
 
         # predict 'enumeration'
         enumeration_predicted = self.enumeration_model.predict(inputs[required_idx])
-        df.loc[required_idx, 'enumeration'], df.loc[required_idx, 'enumeration_conf'] = self.decode_binary(enumeration_predicted, self.label_encoder_enumeration)
-        df.loc[df['enumeration_conf'] < 0.95, 'enumeration'] = None
+        df.loc[required_idx, 'enumeration'], df.loc[required_idx, 'enumeration_conf'] = self.decode_multiclass(enumeration_predicted, self.label_encoder_enumeration)
+        df.loc[df['enumeration_conf'] < 0.5, 'enumeration'] = None
         
 
         # merge 'enumeration' into 'standardFieldName'
