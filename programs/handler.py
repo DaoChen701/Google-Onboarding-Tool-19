@@ -25,12 +25,10 @@ from typing import Optional
 import pandas as pd
 import re
 import yaml
-from pathlib import Path
 import re
 import os
 import pandas as pd
 import yaml
-from collections import defaultdict
 from sentence_transformers import SentenceTransformer, util
 from post_processing.abbreviations import ABBREVIATIONS
 from post_processing.allowed_tokens import ALLOWED_TOKENS
