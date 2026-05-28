@@ -232,7 +232,7 @@ class Mapper(cmd.Cmd):
             usage: validate"""
 
         self.handler.loadsheet_checks()
-        self.handler.validate_loadsheet()
+        # self.handler.validate_loadsheet()
 
     def do_post_processing(self,args):
         """	    Run post-processing logic on the output of the ML model. This consists of three steps: 
