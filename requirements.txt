@@ -10,3 +10,5 @@ regex==2024.11.6
 scikit-learn==1.6.1
 pypiwin32
 # streamlit
+
+sentence-transformers==2.7.0

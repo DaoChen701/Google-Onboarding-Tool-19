@@ -19,6 +19,7 @@ from ml_normalize.ml_handler import MLHandler
 import ontology.ontology
 import loadsheet.loadsheet as load
 from loadsheet_validation_checks.loadsheet_validation_checks import LoadsheetValidationChecks
+from post_processing.post_processing import LoadsheetPostProcessor
 from pretty import PrettyPrint
 import base64
 from typing import Optional
@@ -118,6 +119,7 @@ class Handler:
             ont.validate_without_errors()
             self.ontology_built = True
             self.ontology = ont
+            self.ontology_root = ontology_root
             print(f"[INFO]\tOntology built from '{ontology_root}'.")
 
         except Exception as e:
@@ -563,3 +565,38 @@ class Handler:
             print("✅ All assetNames have exactly one typeName.")
         self.validated = True
         print("\n🎉 All validations passed!")
+
+    def post_processing(self):
+        # Check that the ontology is built first.
+        if not self.ontology_built:
+            print('[ERROR]\tOntology not imported. Import it first.')
+            return
+        
+        # Check that the loadsheet is imported first.
+        if not self.loadsheet_built:
+            print('[ERROR]\tLoadsheet not imported. Import it first.')
+            return
+        
+        # ----------------------------
+        # LOAD INPUT
+        # ----------------------------
+        try:
+            df = pd.read_excel(self.last_loadsheet_path)
+            # We copy the original SFNs here before any mutations occur
+            df["originalStandardFieldName"] = df["standardFieldName"].copy()
+        except FileNotFoundError:
+            print(f"❌ File not found: {self.last_loadsheet_path}")
+            return
+        except PermissionError:
+            print(f"❌ Permission denied: The file '{self.last_loadsheet_path}' is likely open in another program. Please close it and try again.")
+            return
+        except Exception as e:
+            print(f"❌ Unexpected error while reading the file: {e}")
+            return
+
+        # Run the abstracted post-processing logic
+        LoadsheetPostProcessor.run(
+            df=df, 
+            loadsheet_path=self.last_loadsheet_path, 
+            ontology_root=self.ontology_root
+        )

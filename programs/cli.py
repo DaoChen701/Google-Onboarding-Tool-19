@@ -232,7 +232,16 @@ class Mapper(cmd.Cmd):
             usage: validate"""
 
         self.handler.loadsheet_checks()
-        self.handler.validate_loadsheet()
+        # self.handler.validate_loadsheet()
+
+    def do_post_processing(self,args):
+        """	    Run post-processing logic on the output of the ML model. This consists of three steps: 
+                1) Utilize typeName data to remove invalid standardFieldnames 
+                2) Utilize assetName data to group standardFieldNames together and remove duplicates 
+                3) Perform a "majority vote" on standardFieldNames belonging to VAVs, FCUs, and FANs
+            usage: post_processing"""
+
+        self.handler.post_processing()
 
     def do_review(self, args):
         """			Review GeneralTypes and Matches. Loadsheet must be validated
