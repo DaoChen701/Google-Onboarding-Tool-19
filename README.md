@@ -100,7 +100,7 @@ normalize '../resources/rules/google_rules.json'
 ```
 	
 
-#### Step 6 - Export to a NEW loadsheet for review
+#### Step 6a - Export to a NEW loadsheet for review
 Once rules are successfully applied, you should see a new file with normalized columns (e.g., `required`, `assetName`, and `standardFieldName`) filled in. 
 Tool adds a Pivot table.
 
@@ -108,6 +108,28 @@ Tool adds a Pivot table.
 export excel '../loadsheet/Loadsheet_ALC_Normalized.xlsx'
 ```
 
+#### Step 6b - Loadsheet Post-Processor
+The post-processing module (LoadsheetPostProcessor) acts as an automated data-sanitization pipeline. It programmatically cleans a loaded spreadsheet DataFrame to preemptively resolve common errors that cause the Step 8 validate sequence to fail.
+
+Core Features
+Invalid SFN Removal: Automatically checks every standardFieldName against the permitted fields for its assigned typeName (sourced dynamically from the ontology YAML configurations). Invalid or misspelled field names are safely cleared out.
+
+Smart Duplicate Resolution: If multiple fields within the same asset share an identical standardFieldName, the processor uses a hybrid evaluation algorithm to select the best record to keep:
+
+80% Literal Similarity: A Jaccard token similarity score comparing split components of the text string.
+
+20% Semantic Similarity: Uses a lightweight NLP transformer model (all-MiniLM-L6-v2) to cross-evaluate the true contextual meaning of metadata fields (name, type, objectName) against the standard field name.
+
+The row yielding the highest combined score is kept, while the sub-optimal duplicates have their field names cleared.
+
+Majority Vote Harmonization: Specifically targets standardizing fields on high-volume equipment like VAVs, Fans, and FCUs. It clusters data by generalType and objectName, finds the statistical majority mapping winner, and automatically forces conflicting entries into compliance.
+
+Change Audit Log: Every deletion, substitution, and correction is tracked inside an explicit internal event_log.
+
+Execution and Usage
+import ontology "...\digitalbuildings\ontology\yaml\resources"
+import loadsheet '../loadsheet/Loadsheet_ALC_Final.xlsx'
+post_procesing
 
 #### Step 7 - Perform a manual review and repeat steps 3, 4, and 5 as necessary.
 Perform a manual review to ensure that the applied standardFieldNames are correct. Correct any incorrect field names, remove any field names that are not relevant to the model (e.g., PID inputs) by marking the `reqired` column as "NO", and add any field names that were not populated but are relevant to the model by marking the `required` column as "YES".
