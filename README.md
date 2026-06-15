@@ -99,8 +99,7 @@ Apply regular expression rules to populate the standardFieldName column. The def
 normalize '../resources/rules/google_rules.json'
 ```
 	
-
-#### Step 6 - Export to a NEW loadsheet for review
+#### Step 6a - Export to a NEW loadsheet for review
 Once rules are successfully applied, you should see a new file with normalized columns (e.g., `required`, `assetName`, and `standardFieldName`) filled in. 
 Tool adds a Pivot table.
 
@@ -108,6 +107,15 @@ Tool adds a Pivot table.
 export excel '../loadsheet/Loadsheet_ALC_Normalized.xlsx'
 ```
 
+#### Step 6b - Manual review of generalTypes, assetNames, and typeNames (typeNames optional)
+Fill out generalTypes, assetNames, and typeNames for equipment in loadsheet. The post_processing function uses this information as inputs. Without it, the post_processing function will be very limited in what it can accomplish. For more information, see Google-Onboarding-Tool-19\programs\post_processing\README.md
+
+#### Step 6c - Loadsheet Post-Processor
+The post-processing module is designed to sanitize and harmonize the output of the ML model before final validation against the predefined ontology. 
+
+```
+post_processing
+```
 
 #### Step 7 - Perform a manual review and repeat steps 3, 4, and 5 as necessary.
 Perform a manual review to ensure that the applied standardFieldNames are correct. Correct any incorrect field names, remove any field names that are not relevant to the model (e.g., PID inputs) by marking the `reqired` column as "NO", and add any field names that were not populated but are relevant to the model by marking the `required` column as "YES".
